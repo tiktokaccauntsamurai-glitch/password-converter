@@ -1,0 +1,7 @@
+folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp
+Personal,1,login,Gmail,Main mailbox,,0,https://mail.google.com/,demo.user@gmail.com,Gx7#nQ2vLp!4Rt,
+Personal,0,login,Etsy,,,0,https://www.etsy.com/,demo.user@gmail.com,Et6!zAq3Wsx#8Cd,
+Work,0,login,Slack,Company workspace,,0,https://app.slack.com/,d.user@example.com,Sl4@rFv7Tgb!1Yh,
+Work,0,login,Jira,,,0,https://example.atlassian.net/,d.user@example.com,Jr9#cDe2Vfr!6Tg,
+Finance,0,login,Wise,Multi-currency,,0,https://wise.com/,demo.user@gmail.com,Ws5$bGt8Nhy!3Mj,
+,0,login,Local Printer,No TLS on LAN,,0,http://192.168.1.50/,admin,Pr1!qWs4Edc#7Rf,

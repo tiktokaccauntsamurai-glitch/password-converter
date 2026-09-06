@@ -1,0 +1,20 @@
+# NEVER commit plaintext credentials.
+import/*
+!import/README.md
+export/*
+!export/README.md
+
+*.csv
+!samples/**/*.csv
+*.pdf
+print_*.html
+pwvault_audit.log
+
+__pycache__/
+*.py[cod]
+.venv/
+.DS_Store
+Thumbs.db
+
+# Personal git/push tooling - not part of the project, never shared.
+/exclude/
