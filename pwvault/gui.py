@@ -45,6 +45,12 @@ class App(ttk.Frame):
         master.columnconfigure(0, weight=1)
 
         root = os.getcwd()
+        if getattr(sys, "frozen", False):
+            # a bundled app (.app from Finder) starts with cwd "/", so keep
+            # the working folders in the home dir - not in iCloud-synced
+            # ~/Documents or ~/Desktop
+            root = os.path.join(os.path.expanduser("~"), "pwvault")
+            os.makedirs(os.path.join(root, "import"), mode=0o700, exist_ok=True)
         self.var_import = tk.StringVar(value=os.path.join(root, "import"))
         self.var_export = tk.StringVar(value=os.path.join(root, "export"))
         self.var_search = tk.StringVar()

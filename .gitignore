@@ -11,6 +11,9 @@ print_*.html
 pwvault_audit.log
 
 __pycache__/
+build/
+dist/
+*.dmg
 *.py[cod]
 .venv/
 .DS_Store

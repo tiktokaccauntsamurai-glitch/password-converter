@@ -17,8 +17,26 @@ import/  →  выбор галочками  →  export/  →  проверка
 | macOS | двойной клик по `run_macos.command` (первый раз — правой кнопкой → «Открыть») |
 | Любая | `python -m pwvault` |
 | Без окна | `python -m pwvault --cli --list` |
+| macOS без Python | `pwvault-<версия>-macos-universal.dmg` из [Releases](../../releases) или из артефактов последней сборки в Actions |
 
 Проверить, что всё собрано правильно: `python selftest.py` → `42 passed, 0 failed`.
+
+## Сборка для macOS
+
+`.github/workflows/build-macos.yml` собирает `pwvault.app` (universal2: Apple
+Silicon + Intel, Python и Tk внутри) на каждый пуш в `main` и кладёт `.dmg` в
+артефакты сборки. Тег `v*` (например `git tag v1.0.0 && git push origin v1.0.0`)
+дополнительно публикует `.dmg` в Releases. Рецепт сборки —
+`release/pwvault_macos.spec`, на Маке его можно запустить и локально:
+`pyinstaller --noconfirm release/pwvault_macos.spec`.
+
+Приложение не подписано сертификатом Apple, поэтому при первом запуске macOS
+его заблокирует. Откройте «Системные настройки → Конфиденциальность и
+безопасность → Всё равно открыть» или выполните в Терминале
+`xattr -dr com.apple.quarantine /Applications/pwvault.app`.
+
+Собранное приложение по умолчанию работает с папками `~/pwvault/import` и
+`~/pwvault/export` (не в `~/Documents`, который может синхронизироваться с iCloud).
 
 ## Попробовать на демо-данных
 
@@ -80,5 +98,7 @@ export/             сюда пишутся результаты (в git не п
 selftest.py         сквозной тест, 42 проверки
 run_windows.cmd     запуск на Windows
 run_macos.command   запуск на macOS
+release/            рецепт сборки .app (PyInstaller)
+.github/workflows/  сборка .dmg для macOS в GitHub Actions
 merge_passwords.py  первоначальный скрипт, оставлен как есть
 ```

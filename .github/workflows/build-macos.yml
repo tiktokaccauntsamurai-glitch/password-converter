@@ -1,0 +1,76 @@
+name: Build macOS app
+
+# Every push to main builds pwvault.app and attaches the .dmg to the run
+# (Actions -> run -> Artifacts). Pushing a tag like v1.0.0 also publishes
+# the .dmg as a GitHub Release.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    env:
+      # python.org installer: universal2 and bundles its own Tk
+      PY_VERSION: "3.13.7"
+      PYINSTALLER_VERSION: "6.16.0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install python.org Python
+        run: |
+          curl -fsSLo "$RUNNER_TEMP/python.pkg" \
+            "https://www.python.org/ftp/python/${PY_VERSION}/python-${PY_VERSION}-macos11.pkg"
+          sudo installer -pkg "$RUNNER_TEMP/python.pkg" -target /
+          PY="/Library/Frameworks/Python.framework/Versions/${PY_VERSION%.*}/bin/python3"
+          "$PY" -m venv "$RUNNER_TEMP/venv"
+          echo "PY=$RUNNER_TEMP/venv/bin/python" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/venv/bin/python" -c "import sys, tkinter; print(sys.version, 'Tk', tkinter.TkVersion)"
+
+      - name: Self-test
+        run: $PY selftest.py
+
+      - name: Build pwvault.app
+        run: |
+          $PY -m pip install --disable-pip-version-check "pyinstaller==${PYINSTALLER_VERSION}"
+          $PY -m PyInstaller --noconfirm release/pwvault_macos.spec
+          lipo -archs dist/pwvault.app/Contents/MacOS/pwvault
+          # Apple Silicon refuses to run unsigned arm64 code: re-sign the
+          # whole bundle ad-hoc so every nested binary has a valid signature
+          codesign --force --deep --sign - dist/pwvault.app
+          codesign --verify --deep --strict dist/pwvault.app
+          # smoke test: the bundled binary starts and the CLI answers
+          dist/pwvault.app/Contents/MacOS/pwvault --cli --help
+
+      - name: Package .dmg
+        run: |
+          VERSION=$($PY -c "import pwvault; print(pwvault.__version__)")
+          DMG="pwvault-${VERSION}-macos-universal.dmg"
+          mkdir dmg
+          ditto dist/pwvault.app dmg/pwvault.app
+          ln -s /Applications dmg/Applications
+          # hdiutil on CI runners sometimes fails with "Resource busy"
+          for i in 1 2 3; do
+            hdiutil create -volname "pwvault ${VERSION}" -srcfolder dmg -ov -format UDZO "$DMG" && break
+            sleep 5
+          done
+          test -f "$DMG"
+          echo "DMG=$DMG" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pwvault-macos
+          path: ${{ env.DMG }}
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "$DMG" --title "pwvault $GITHUB_REF_NAME" --generate-notes \
+            || gh release upload "$GITHUB_REF_NAME" "$DMG" --clobber
